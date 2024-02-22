@@ -22,18 +22,6 @@ class AlertsController extends Controller
     {
         $data = [];
         $status = ["Resolved", "Unresolved"];
-        /***
-
-      "category": "Segmentation",
-      "detected_time": "2021-07-11T19:40:46.835404+00:00",
-      "updated_time": "2021-07-11T19:40:46.835404+00:00",
-      "devices_count": 2,
-      "unresolved_devices_count": 2,
-      "medical_devices_count": 1,
-      "iot_devices_count": 0,
-      "it_devices_count": 1,
-      "status": "Unresolved"
-         ***/
 
         for ($i = 0; $i < 30; $i++) {
             $obj = new stdClass;
