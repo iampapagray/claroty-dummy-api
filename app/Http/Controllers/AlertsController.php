@@ -11,6 +11,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Str;
 use ClaudioDekker\WordGenerator\Generator;
 use DateTime;
+use Illuminate\Support\Arr;
 use stdClass;
 
 class AlertsController extends Controller
@@ -18,7 +19,7 @@ class AlertsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $data = [];
         $status = ["Resolved", "Unresolved"];
@@ -39,6 +40,16 @@ class AlertsController extends Controller
             $obj->status = $status[array_rand($status)];
 
             array_push($data, $obj);
+        }
+
+        if (isset($request->filter)) {
+            $search = strtolower($request->filter);
+            $filtered = Arr::where($data, function ($value, $key) use ($search) {
+                $searchColumn = strtolower($value->alert_type_name);
+                return Str::contains($searchColumn, $search);
+            });
+
+            return $this->paginate($filtered);
         }
 
         return $this->paginate($data);

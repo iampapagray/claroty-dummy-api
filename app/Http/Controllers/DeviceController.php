@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use stdClass;
 
@@ -15,10 +16,11 @@ class DeviceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $data = [];
         $scores = ["Low", "Medium", "High"];
+        $models = ['Laser Printer', "Jet Printer", "Photocopier", "InkJet", "Air Conditioner"];
 
         for ($i = 0; $i < 30; $i++) {
             $vlan = array_map(
@@ -43,12 +45,22 @@ class DeviceController extends Controller
             $newObj->retired = (bool)random_int(0, 1);
             $newObj->assignees = [];
             $newObj->network_list = ["Corporate"];
-            $newObj->model = "Laser Printer";
+            $newObj->model = $models[array_rand($models)];
             $newObj->device_type = "Printer";
             $newObj->device_category = "IoT";
             $newObj->ip_list = ["10.100.3.80"];
 
             array_push($data, $newObj);
+        }
+
+        if (isset($request->filter)) {
+            $search = strtolower($request->filter);
+            $filtered = Arr::where($data, function ($value, $key) use ($search) {
+                $searchColumn = strtolower($value->model);
+                return Str::contains($searchColumn, $search);
+            });
+
+            return $this->paginate($filtered);
         }
 
         return $this->paginate($data);
