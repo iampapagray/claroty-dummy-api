@@ -24,7 +24,7 @@ class AlertsController extends Controller
         $data = [];
         $status = ["Resolved", "Unresolved"];
 
-        for ($i = 0; $i < 30; $i++) {
+        for ($i = 0; $i < 25; $i++) {
             $obj = new stdClass;
 
             $obj->id = $i;
@@ -42,14 +42,23 @@ class AlertsController extends Controller
             array_push($data, $obj);
         }
 
-        if (isset($request->filter)) {
-            $search = strtolower($request->filter);
-            $filtered = Arr::where($data, function ($value, $key) use ($search) {
+        if (isset($request->filter) && $request->filter == 'level-0') {
+            $filtered = Arr::where($data, function ($value, $key) {
+                $searchColumn = strtolower($value->device_type_family);
+                return Str::contains($searchColumn, 'level-0');
+            });
+
+            $data = $filtered;
+        }
+
+        if (isset($request->search)) {
+            $search = strtolower($request->search);
+            $searched = Arr::where($data, function ($value, $key) use ($search) {
                 $searchColumn = strtolower($value->alert_type_name);
                 return Str::contains($searchColumn, $search);
             });
 
-            return $this->paginate($filtered);
+            return $this->paginate($searched);
         }
 
         return $this->paginate($data);
@@ -66,8 +75,19 @@ class AlertsController extends Controller
     public function paginate($items, $perPage = 5, $page = null, $options = [])
     {
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
-        $items = $items instanceof Collection ? $items : Collection::make($items);
-        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
+        $items = $items instanceof Collection ? $items : new Collection($items);
+
+        // return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
+
+        $paginatedData = $items->slice(($page - 1) * $perPage, $perPage)->values()->all();
+
+        return new LengthAwarePaginator(
+            $paginatedData, // Sliced data for the current page
+            count($items), // Total items count
+            $perPage, // Items per page
+            $page, // Current page
+            ['path' => request()->url()] // Additional options for the paginator, like URL
+        );
     }
 
     /**
